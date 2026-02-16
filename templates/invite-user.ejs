@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <h2>You’re Invited 🎉</h2>
+
+    <p>
+      You have been invited to join the HR system as <b><%= role %></b>.
+    </p>
+
+    <% if (customMessage) { %>
+      <p><%= customMessage %></p>
+    <% } %>
+
+    <p>
+      <a href="<%= inviteLink %>">Accept Invitation</a>
+    </p>
+
+    <p>This invitation link is valid for a limited time.</p>
+  </body>
+</html>

@@ -1,1 +1,17 @@
 # HR_Management
+
+# Env
+MONGODB_URI
+JWT_SECRET
+CRYPTO_SECRET
+
+EMAIL_USER
+EMAIL_PASS
+
+ADMIN_EMAIL
+ADMIN_EMAIL_PASS
+MISTRAL_API_KEY
+
+# Frontend
+NEXT_PUBLIC_API_URL=http://localhost:3000/api
+NEXT_PUBLIC_SECRET_KEY=hr_manager_encrypt_decrypt_secret_1316
