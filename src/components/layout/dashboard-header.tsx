@@ -32,8 +32,8 @@ import {
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/auth-context";
-import { UserRole } from "@/app/dashboard/page";
 import { ThemeToggle } from "../theme/theme-toggle";
+import { UserRole } from "@/apiServices/auth.api";
 
 interface DashboardHeaderProps {
   userRole: UserRole;
@@ -104,7 +104,7 @@ export function DashboardHeader({
       </div>
 
       {/* Search Bar */}
-      <div className="flex-1 max-w-md mx-4">
+      {/* <div className="flex-1 max-w-md mx-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 h-4 w-4" />
           <Input
@@ -114,7 +114,7 @@ export function DashboardHeader({
             className="pl-10 pr-4 bg-slate-50 border-slate-200 focus:outline-none transition-colors text-gray-600 dark:text-white"
           />
         </div>
-      </div>
+      </div> */}
 
       {/* Right Section */}
       <div className="flex items-center gap-3 px-4">
@@ -148,8 +148,8 @@ export function DashboardHeader({
                   alt={user.firstName}
                 />
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm">
-                  {user.firstName[0]}
-                  {user.lastName[0]}
+                  {user.firstName}
+                  {user.lastName}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden md:block text-left">

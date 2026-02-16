@@ -2,10 +2,10 @@ import Otp from "../models/otp";
 import User from "../models/user";
 import Company from "../models/company";
 import bcrypt from "bcryptjs";
-import { sendOtpToEmail, sendResetPasswordLink } from "@/app/api/utils/emailSend";
-import { generateOtp, generateOtpExpiry, generateResetToken, generateToken } from "../utils/utils";
+import { generateOtp, generateOtpExpiry, generateResetToken, generateToken, verifyToken } from "../utils/utils";
 import { ROLES, USER_STATUS } from "../lib/constants/enums";
 import crypto from "crypto"
+import { sendInviteEmail, sendOtpToEmail, sendResetPasswordLink } from "../utils/emailSend";
 
 interface RegisterUserProps {
   firstName: string;
@@ -26,6 +26,7 @@ export const registerUser = async (data: RegisterUserProps) => {
 
   // Create company (empty onboarding)
   const company = await Company.create({
+    email: data.email,
     onboardingCompleted: false,
   });
 
@@ -78,6 +79,8 @@ export const loginUser = async (email: string, password: string) => {
     throw new Error("Please verify your email first");
   }
 
+  const company = await Company.findById(user.companyId);
+
   const token = generateToken(user._id.toString(), user.email, user.companyId.toString(), user.role);
 
   return {
@@ -87,6 +90,7 @@ export const loginUser = async (email: string, password: string) => {
       role: user.role,
       companyId: user.companyId,
     },
+    onboardingCompleted: company?.onboardingCompleted ?? false,
   };
 };
 
@@ -129,7 +133,7 @@ export const verifyOtp = async ({
 
   return {
     token,
-    role: user.role,
+    user: user,
     onboardingCompleted: company?.onboardingCompleted ?? false,
   };
 };
@@ -230,4 +234,76 @@ export const resetPassword = async ({
   await user.save();
 
   return true;
+};
+
+// Invite User
+export const inviteUser = async ({
+  email,
+  role,
+  departmentId,
+  companyId
+}: {
+  email: string;
+  role: string;
+  departmentId?: string;
+  companyId?: string;
+}) => {
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    throw new Error("User already exists");
+  }
+
+  const user = await User.create({
+    email,
+    role,
+    departmentId,
+    companyId,
+    status: USER_STATUS.INVITED,
+    emailVerified: false,
+    password: "",
+  });
+
+  const token = generateToken(user._id.toString(), user.email, user.companyId.toString(), user.role);
+
+  const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?token=${token}`;
+
+  await sendInviteEmail(
+    email,
+    inviteLink,
+    role,
+    "You have been invited to join the HR system"
+  );
+  return {
+    userId: user._id,
+    message: "Invitation sent successfully",
+  };
+};
+
+// Accept Invitation
+export const acceptInvite = async (
+  token: string,
+  data: {
+    password: string;
+    firstName: string;
+    lastName: string;
+  }
+) => {
+  const decoded: any = verifyToken(token);
+
+  const user = await User.findById(decoded.userId);
+  if (!user || user.status !== USER_STATUS.INVITED) {
+    throw new Error("Invalid or expired invitation");
+  }
+
+  user.password = await bcrypt.hash(data.password, 10);
+  user.firstName = data.firstName;
+  user.lastName = data.lastName;
+  user.status = USER_STATUS.ACTIVE;
+  user.emailVerified = true;
+
+  await user.save();
+
+  return {
+    message: "Invitation accepted successfully",
+  };
 };

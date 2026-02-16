@@ -28,7 +28,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useEmployeeApi } from "@/lib/api/employee";
+import { useEmployeeApi } from "@/apiServices/employee";
 import type { User } from "@/app/api/types/model";
 import { useRouter } from "next/navigation";
 import { getEmployees } from "@/app/api/services/employee.service";
@@ -338,7 +338,12 @@ export function EmployeeList({ onViewEmployee }: EmployeeListProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {employees?.map((employee) => (
+                {Array.isArray(employees) && employees?.length === 0 &&
+                <TableRow>
+                  <TableCell>No Employee Data Available</TableCell>
+                </TableRow>
+                }
+                {Array.isArray(employees) && employees?.map((employee) => (
                   <TableRow key={employee._id}>
                     {visibleColumns.map((columnKey) => (
                       <TableCell key={columnKey}>

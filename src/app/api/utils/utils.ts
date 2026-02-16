@@ -30,8 +30,16 @@ export const generateToken = (
   };
 
   return jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: "7d",
+    expiresIn: "30d",
   });
+};
+
+export const verifyToken = (token: string) => {
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET!);
+  } catch (err) {
+    throw new Error("Invalid or expired token");
+  }
 };
 
 export const generateResetToken = () => {

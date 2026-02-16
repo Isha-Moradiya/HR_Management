@@ -30,7 +30,7 @@ import {
   Filter,
 } from "lucide-react";
 import type { UserRole } from "@/app/dashboard/page";
-import { useEmployeeApi } from "@/lib/api/employee";
+import { useEmployeeApi } from "@/apiServices/employee";
 import type { User } from "@/app/api/types/model";
 import { useRouter } from "next/navigation";
 

@@ -1,7 +1,6 @@
-import mongoose, { Schema, model, models, Document } from "mongoose";
-import { Notification } from "@/app/api/types/model";
+import { Schema, model, models, Document } from "mongoose";
 
-const NotificationSchema = new Schema<Notification & Document>(
+const NotificationSchema = new Schema(
   {
     companyId: {
       type: Schema.Types.ObjectId,
@@ -36,5 +35,4 @@ const NotificationSchema = new Schema<Notification & Document>(
   { timestamps: true }
 );
 
-export default models.Notification ||
-  model<Notification & Document>("Notification", NotificationSchema);
+export default models.Notification || model("Notification", NotificationSchema);

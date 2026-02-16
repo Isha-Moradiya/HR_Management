@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { registerUser } from "@/app/api/services/auth.service";
 import { connectDB } from "@/app/api/config/database";
-import { signupSchema } from "../../lib/validations/auth.validation";
+import { signupSchema } from "../../../../validations/auth.validation";
 import { response } from "../../lib/response/responseHandler";
 
 export async function POST(req: NextRequest) {

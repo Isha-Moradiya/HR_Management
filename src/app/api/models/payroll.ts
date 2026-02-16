@@ -1,7 +1,6 @@
-import mongoose, { Schema, model, models, Document } from "mongoose";
-import { Payroll } from "@/app/api/types/model";
+import { Schema, model, models } from "mongoose";
 
-const PayrollSchema = new Schema<Payroll & Document>(
+const PayrollSchema = new Schema(
   {
     companyId: {
       type: Schema.Types.ObjectId,
@@ -49,5 +48,4 @@ const PayrollSchema = new Schema<Payroll & Document>(
   { timestamps: true }
 );
 
-export default models.Payroll ||
-  model<Payroll & Document>("Payroll", PayrollSchema);
+export default models.Payroll || model("Payroll", PayrollSchema);

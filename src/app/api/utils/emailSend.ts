@@ -68,3 +68,54 @@ export const sendResetPasswordLink = async (
     throw err;
   }
 };
+
+export const sendInviteEmail = async (
+  email: string,
+  inviteLink: string,
+  role: string,
+  customMessage?: string
+) => {
+  try {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.log("⚠️ Email credentials not configured, skipping email send");
+      return;
+    }
+
+    const templatePath = path.resolve(
+      process.cwd(),
+      "templates",
+      "invite-user.ejs"
+    );
+
+    const html = await ejs.renderFile(templatePath, {
+      inviteLink,
+      role,
+      customMessage,
+    });
+
+    const mailOptions = {
+      from: DEFAULT_FROM,
+      to: email,
+      subject: `You're invited to join the HR system as ${role}`,
+      html,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("✅ Invite email sent successfully:", info.response);
+    return info;
+  } catch (err) {
+    console.error("❌ Failed to send invite email:", err);
+    throw err;
+  }
+};
+
+export const sendEmail = async ({ to, subject, html }: { to: string; subject: string; html: string }) => {
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to,
+    subject,
+    html,
+  });
+
+  return true;
+}

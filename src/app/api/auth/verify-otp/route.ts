@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyOtp } from "@/app/api/services/auth.service";
 import { connectDB } from "@/app/api/config/database";
-import { verifyOtpSchema } from "../../lib/validations/auth.validation";
+import { verifyOtpSchema } from "../../../../validations/auth.validation";
 import { response } from "../../lib/response/responseHandler";
 
 export async function POST(req: NextRequest) {

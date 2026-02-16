@@ -1,7 +1,7 @@
 import { Otp } from "@/app/api/types/model";
 import { model, Schema, Document, models } from "mongoose";
 
-const OtpSchema = new Schema<Otp & Document>(
+const OtpSchema = new Schema(
   {
     email: { type: String, required: true },
     otpCode: { type: String, required: true },
@@ -10,4 +10,4 @@ const OtpSchema = new Schema<Otp & Document>(
   { timestamps: true }
 );
 
-export default models.Otp || model<Otp & Document>("Otp", OtpSchema);
+export default models.Otp || model("Otp", OtpSchema);

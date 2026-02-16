@@ -2,14 +2,15 @@
 
 import type React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
-import { encryptData, decryptData } from "@/lib/crypto"; // Adjust the import path as necessary
+import { encrypt, decrypt } from "../lib/encryption-utils";
+import { UserRole } from "@/apiServices/auth.api";
 
 export interface User {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
-  role: "admin" | "employee";
+  role: UserRole;
   department?: string;
   avatar?: string;
   isVerified: boolean;
@@ -50,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const storedToken = localStorage.getItem("hr_token");
       if (storedUser) {
         try {
-          const decryptedUser = await decryptData(storedUser);
+          const decryptedUser = await decrypt(storedUser);
           setUser(JSON.parse(decryptedUser));
         } catch {
           localStorage.removeItem("hr_user");
@@ -58,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       if (storedToken) {
         try {
-          const decryptedToken = await decryptData(storedToken);
+          const decryptedToken = await decrypt(storedToken);
           setToken(decryptedToken);
         } catch {
           localStorage.removeItem("hr_token");
@@ -72,10 +73,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setUserAndToken = async (user: User, token: string) => {
     setUser(user);
     setToken(token);
-    const encryptedUser = await encryptData(JSON.stringify(user));
-    const encryptedToken = await encryptData(token);
-    const encryptedRole = await encryptData(user.role);
-    const encryptedEmail = await encryptData(user.email);
+    const encryptedUser = await encrypt(JSON.stringify(user));
+    const encryptedToken = await encrypt(token);
+    const encryptedRole = await encrypt(user?.role);
+    const encryptedEmail = await encrypt(user?.email);
     localStorage.setItem("hr_user", encryptedUser);
     localStorage.setItem("hr_token", encryptedToken);
     localStorage.setItem("hr_role", encryptedRole);
@@ -83,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const setEmail = async (email: string) => {
-    const encryptedEmail = await encryptData(email);
+    const encryptedEmail = await encrypt(email);
     localStorage.setItem("hr_email", encryptedEmail);
   };
 
@@ -91,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const stored = localStorage.getItem("hr_email");
     if (!stored) return null;
     try {
-      return await decryptData(stored);
+      return await decrypt(stored);
     } catch {
       localStorage.removeItem("hr_email");
       return null;
@@ -99,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const setOtp = async (otp: string) => {
-    const encryptedOtp = await encryptData(otp);
+    const encryptedOtp = await encrypt(otp);
     localStorage.setItem("hr_otp", encryptedOtp);
   };
 
@@ -107,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const stored = localStorage.getItem("hr_otp");
     if (!stored) return null;
     try {
-      return await decryptData(stored);
+      return await decrypt(stored);
     } catch {
       localStorage.removeItem("hr_otp");
       return null;

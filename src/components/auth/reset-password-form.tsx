@@ -1,311 +1,157 @@
 "use client";
 
-import type React from "react";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2, Check, Eye, EyeOff } from "lucide-react";
+import * as z from "zod";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { AlertCircle, Check, Eye, EyeOff, Loader2 } from "lucide-react";
-import { validateResetPasswordForm, validatePassword } from "@/lib/validation";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/auth-context";
+import { resetPassword } from "@/apiServices/auth.api";
+import { useState } from "react";
+import { resetPasswordSchema } from "@/validations/auth.validation";
 
-export function ResetPasswordForm({
-  className,
-  ...props
-}: React.ComponentPropsWithoutRef<"form">) {
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
+
+export function ResetPasswordForm() {
   const router = useRouter();
   const { toast } = useToast();
   const { getEmail, getOtp } = useAuth();
-  const [formData, setFormData] = useState({
-    password: "",
-    confirmPassword: "",
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const form = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { newPassword: "", confirmPassword: "" },
+  });
 
-    if (touched[name]) {
-      const newErrors = validateResetPasswordForm({
-        ...formData,
-        [name]: value,
+  const onSubmit = async (values: ResetPasswordFormValues) => {
+    const email = await getEmail();
+    const otpCode = await getOtp();
+
+    if (!email) {
+      toast({
+        title: "Email not found",
+        description: "Please restart the password reset process.",
+        variant: "destructive",
       });
-      setErrors((prev) => ({ ...prev, [name]: newErrors[name] || "" }));
-    }
-
-    // Special case for password confirmation
-    if (name === "password" && touched.confirmPassword) {
-      const newErrors = validateResetPasswordForm({
-        ...formData,
-        password: value,
-      });
-      setErrors((prev) => ({
-        ...prev,
-        confirmPassword: newErrors.confirmPassword || "",
-      }));
-    }
-  };
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name } = e.target;
-    setTouched((prev) => ({ ...prev, [name]: true }));
-
-    const newErrors = validateResetPasswordForm(formData);
-    setErrors((prev) => ({ ...prev, [name]: newErrors[name] || "" }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validate all fields
-    const newErrors = validateResetPasswordForm(formData);
-    setErrors(newErrors);
-    setTouched(
-      Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {})
-    );
-
-    // If there are errors, don't proceed
-    if (Object.keys(newErrors).length > 0) {
       return;
     }
 
-    setIsLoading(true);
-
-    try {
-      const email = await getEmail();
-      const otpCode = await getOtp();
-
-      if (!email) {
-        toast({
-          title: "Email not found",
-          description: "Please restart the password reset process.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      if (!otpCode) {
-        toast({
-          title: "Verification required",
-          description: "Please verify your email first.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Call reset password API
-      const res = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          password: formData.password,
-          otpCode,
-        }),
-      });
-      const data = await res.json();
-
-      if (res.ok || data.success) {
-        toast({
-          title: "Password reset successful",
-          description:
-            "Your password has been updated. You can now log in with your new password.",
-          variant: "default",
-        });
-        router.push("/login?reset=true");
-      }
-    } catch (error: any) {
-      console.error("Password reset failed:", error);
+    if (!otpCode) {
       toast({
-        title: "Password reset failed",
-        description:
-          error.message ||
-          "There was a problem resetting your password. Please try again.",
+        title: "Verification required",
+        description: "Please verify your email first.",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
+      return;
+    }
+
+    try {
+      await resetPassword({ token: otpCode, newPassword: values.newPassword, confirmPassword: values.confirmPassword });
+
+      toast({
+        title: "Password reset successful",
+        description: "You can now log in with your new password.",
+      });
+
+      router.push("/login?reset=true");
+    } catch (err: any) {
+      toast({
+        title: "Password reset failed",
+        description: err?.response?.data?.message || "Please try again",
+        variant: "destructive",
+      });
     }
   };
 
-  const getInputClassName = (fieldName: string) => {
-    if (!touched[fieldName]) return "";
-    return errors[fieldName]
-      ? "border-red-500 focus:border-red-500"
-      : "border-green-500 focus:border-green-500";
-  };
-
-  const passwordValidationResult = validatePassword(formData.password);
-
   return (
-    <form
-      className={cn("flex flex-col gap-6", className)}
-      onSubmit={handleSubmit}
-      noValidate
-      {...props}
-    >
-      <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-2xl font-bold">Set new password</h1>
-        <p className="text-balance text-sm text-muted-foreground">
-          Enter your new password below to complete the reset process.
-        </p>
-      </div>
-      <div className="grid gap-6">
-        <div className="grid gap-2">
-          <Label htmlFor="password">New password</Label>
-          <div className="relative">
-            <Input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              disabled={isLoading}
-              value={formData.password}
-              onChange={handleInputChange}
-              onBlur={handleBlur}
-              className={`pr-10 ${getInputClassName("password")}`}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-              onClick={() => setShowPassword(!showPassword)}
-              disabled={isLoading}
-            >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <Eye className="h-4 w-4 text-muted-foreground" />
-              )}
-            </Button>
-            {touched.password && !errors.password && !isLoading && (
-              <Check className="absolute right-10 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-500" />
-            )}
-          </div>
-          {touched.password && errors.password && (
-            <p className="text-sm text-red-500 flex items-center gap-1">
-              <AlertCircle className="h-3 w-3" />
-              {errors.password}
-            </p>
-          )}
-          {formData.password && (
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">
-                Password requirements:
-              </p>
-              <div className="grid grid-cols-2 gap-1 text-xs">
-                <div
-                  className={`flex items-center gap-1 ${
-                    passwordValidationResult.requirements.minLength
-                      ? "text-green-600"
-                      : "text-red-500"
-                  }`}
-                >
-                  {passwordValidationResult.requirements.minLength ? (
-                    <Check className="h-3 w-3" />
-                  ) : (
-                    <AlertCircle className="h-3 w-3" />
-                  )}
-                  8+ characters
-                </div>
-                <div
-                  className={`flex items-center gap-1 ${
-                    passwordValidationResult.requirements.hasUpperCase
-                      ? "text-green-600"
-                      : "text-red-500"
-                  }`}
-                >
-                  {passwordValidationResult.requirements.hasUpperCase ? (
-                    <Check className="h-3 w-3" />
-                  ) : (
-                    <AlertCircle className="h-3 w-3" />
-                  )}
-                  Uppercase letter
-                </div>
-                <div
-                  className={`flex items-center gap-1 ${
-                    passwordValidationResult.requirements.hasLowerCase
-                      ? "text-green-600"
-                      : "text-red-500"
-                  }`}
-                >
-                  {passwordValidationResult.requirements.hasLowerCase ? (
-                    <Check className="h-3 w-3" />
-                  ) : (
-                    <AlertCircle className="h-3 w-3" />
-                  )}
-                  Lowercase letter
-                </div>
-                <div
-                  className={`flex items-center gap-1 ${
-                    passwordValidationResult.requirements.hasNumbers
-                      ? "text-green-600"
-                      : "text-red-500"
-                  }`}
-                >
-                  {passwordValidationResult.requirements.hasNumbers ? (
-                    <Check className="h-3 w-3" />
-                  ) : (
-                    <AlertCircle className="h-3 w-3" />
-                  )}
-                  Number
-                </div>
-              </div>
-            </div>
-          )}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full max-w-md" noValidate>
+        <div className="flex flex-col items-center gap-2 text-center">
+          <h1 className="text-2xl font-bold">Set new password</h1>
+          <p className="text-sm text-muted-foreground">
+            Enter your new password below to complete the reset process.
+          </p>
         </div>
-        <div className="grid gap-2">
-          <Label htmlFor="confirm-password">Confirm new password</Label>
-          <div className="relative">
-            <Input
-              id="confirm-password"
-              name="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              disabled={isLoading}
-              value={formData.confirmPassword}
-              onChange={handleInputChange}
-              onBlur={handleBlur}
-              className={`pr-10 ${getInputClassName("confirmPassword")}`}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              disabled={isLoading}
-            >
-              {showConfirmPassword ? (
-                <EyeOff className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <Eye className="h-4 w-4 text-muted-foreground" />
-              )}
-            </Button>
-            {touched.confirmPassword &&
-              !errors.confirmPassword &&
-              !isLoading && (
-                <Check className="absolute right-10 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-500" />
-              )}
-          </div>
-          {touched.confirmPassword && errors.confirmPassword && (
-            <p className="text-sm text-red-500 flex items-center gap-1">
-              <AlertCircle className="h-3 w-3" />
-              {errors.confirmPassword}
-            </p>
+
+        <FormField
+          control={form.control}
+          name="newPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>New password</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input
+                    {...field}
+                    type={showPassword ? "text" : "password"}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                  </Button>
+                  {field.value && !form.formState.errors.newPassword && (
+                    <Check className="absolute right-10 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-500" />
+                  )}
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
-        </div>
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? (
+        />
+
+        <FormField
+          control={form.control}
+          name="confirmPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Confirm new password</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input
+                    {...field}
+                    type={showConfirmPassword ? "text" : "password"}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                  </Button>
+                  {field.value && !form.formState.errors.confirmPassword && (
+                    <Check className="absolute right-10 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-500" />
+                  )}
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+          {form.formState.isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Updating password...
@@ -314,17 +160,13 @@ export function ResetPasswordForm({
             "Update password"
           )}
         </Button>
-      </div>
-      <div className="text-center text-sm">
-        <a
-          href="/login"
-          className={`underline underline-offset-4 ${
-            isLoading ? "pointer-events-none opacity-50" : ""
-          }`}
-        >
-          Back to login
-        </a>
-      </div>
-    </form>
+
+        <div className="text-center text-sm">
+          <a href="/login" className="underline underline-offset-4">
+            Back to login
+          </a>
+        </div>
+      </form>
+    </Form>
   );
 }

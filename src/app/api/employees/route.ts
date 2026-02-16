@@ -5,6 +5,7 @@ import Department from "../models/department";
 import { promisify } from "util";
 import { createWriteStream } from "fs";
 import { pipeline } from "stream";
+import { getAllUsers } from "../services/users.service";
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
     if (url.searchParams.get("skillset")) {
       filters.skillset = url.searchParams.get("skillset");
     }
-    const employees = await getEmployees(filters);
+    const employees = await getAllUsers(filters);
     return NextResponse.json(employees);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 401 });

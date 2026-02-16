@@ -24,7 +24,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, X } from "lucide-react";
 import type { Department, User } from "@/app/api/types/model";
-import { useEmployeeApi } from "@/lib/api/employee";
+import { useEmployeeApi } from "@/apiServices/employee";
 
 interface EmployeeFormModalProps {
   isOpen: boolean;

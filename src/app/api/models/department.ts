@@ -1,7 +1,7 @@
-import { Department } from "@/app/api/types/model";
-import mongoose, { Schema, models, model, Document } from "mongoose";
+import { Schema, models, model } from "mongoose";
+import { DEPARTMENT_STATUS } from "../lib/constants/enums";
 
-const DepartmentSchema = new Schema<Department & Document>(
+const DepartmentSchema = new Schema(
   {
     companyId: {
       type: Schema.Types.ObjectId,
@@ -18,12 +18,13 @@ const DepartmentSchema = new Schema<Department & Document>(
     },
     status: {
       type: String,
-      enum: ["active", "inactive"],
-      default: "active",
+      enum: Object.values(DEPARTMENT_STATUS),
+      default: DEPARTMENT_STATUS.ACTIVE,
     },
   },
   { timestamps: true }
 );
 
-export default models.Department ||
-  model<Department & Document>("Department", DepartmentSchema);
+const Department = models.Department || model("Department", DepartmentSchema);
+
+export default Department

@@ -10,3 +10,8 @@ export const USER_STATUS = {
     ACTIVE: "ACTIVE",
     INACTIVE: "INACTIVE",
 }
+
+export const DEPARTMENT_STATUS = {
+    ACTIVE: "ACTIVE",
+    INACTIVE: "INACTIVE",
+}

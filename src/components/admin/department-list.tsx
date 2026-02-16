@@ -40,16 +40,27 @@ interface DepartmentResponse {
   status: "active" | "inactive";
 }
 
-// for example (SSG- Static Site Generation)
-export const getStaticProps = async () => {
-  const res = await fetch("/api/departments");
-  const products = await res.json();
-
-  return {
-    props: { products },
-    revalidate: 60, // page automatically rebuild every 60 seconds
+interface DepartmentListResponse {
+  success: boolean;
+  message: string;
+  data: {
+    departments: Department[];
+    total: number;
+    page: number;
+    totalPages: number;
   };
-};
+}
+
+// // for example (SSG- Static Site Generation)
+// export const getStaticProps = async () => {
+//   const res = await fetch("/api/departments");
+//   const products = await res.json();
+
+//   return {
+//     props: { products },
+//     revalidate: 60, // page automatically rebuild every 60 seconds
+//   };
+// };
 
 export function DepartmentList() {
   const { token } = useAuth();
@@ -114,12 +125,24 @@ export function DepartmentList() {
           Authorization: `Bearer ${token}`,
         },
       });
+
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to fetch departments");
+        throw new Error(error.message || "Failed to fetch departments");
       }
-      const data: DepartmentResponse[] = await response.json();
-      setDepartments(data.map(transformDepartment));
+
+      const result: DepartmentListResponse = await response.json();
+
+      console.log("🚀 ~ fetchDepartments ~ result:", result);
+
+      // ✅ CORRECT
+      setDepartments(result.data.departments);
+
+      // // Optional (pagination)
+      // setTotal(result.data.total);
+      // setPage(result.data.page);
+      // setTotalPages(result.data.totalPages);
+
     } catch (error: any) {
       console.error("Error fetching departments:", error);
       toast({
@@ -284,17 +307,17 @@ export function DepartmentList() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {departments.map((department) => (
+              {Array.isArray(departments) && departments?.map((department) => (
                 <TableRow key={department.id}>
                   <TableCell>
                     <img
                       src={department.logo || "/placeholder.svg"}
-                      alt={`${department.name} logo`}
+                      alt={`${department.department_name} logo`}
                       className="h-10 w-10 rounded-lg object-cover"
                     />
                   </TableCell>
                   <TableCell className="font-medium">
-                    {department.name}
+                    {department.department_name}
                   </TableCell>
                   <TableCell>
                     {new Date(department.createdDate).toLocaleDateString()}

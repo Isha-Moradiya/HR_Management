@@ -1,7 +1,6 @@
-import mongoose, { Schema, model, models, Document } from "mongoose";
-import { Subscription } from "@/app/api/types/model";
+import { Schema, model, models } from "mongoose";
 
-const SubscriptionSchema = new Schema<Subscription & Document>(
+const SubscriptionSchema = new Schema(
   {
     companyId: {
       type: Schema.Types.ObjectId,
@@ -41,5 +40,4 @@ const SubscriptionSchema = new Schema<Subscription & Document>(
   { timestamps: true }
 );
 
-export default models.Subscription ||
-  model<Subscription & Document>("Subscription", SubscriptionSchema);
+export default models.Subscription || model("Subscription", SubscriptionSchema);

@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { Loader2 } from "lucide-react";
 
-export type UserRole = "admin" | "employee";
-
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
   const router = useRouter();

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { resetPassword } from "@/app/api/services/auth.service";
 import { connectDB } from "@/app/api/config/database";
 import { validateResetPasswordForm } from "@/lib/validation";
-import { resetPasswordSchema } from "../../lib/validations/auth.validation";
+import { resetPasswordSchema } from "../../../../validations/auth.validation";
 import { response } from "../../lib/response/responseHandler";
 
 export async function POST(req: NextRequest) {

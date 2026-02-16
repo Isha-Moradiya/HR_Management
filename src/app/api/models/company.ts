@@ -1,15 +1,28 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, models } from "mongoose";
+
+// export interface CompanyDocument extends Document {
+//   email: string;
+//   name?: string;
+//   phone?: string;
+//   address?: string;
+//   industry?: string;
+//   size?: string;
+//   description?: string;
+//   logo?: string;
+//   onboardingCompleted: boolean;
+//   plan: string;
+//   subscriptionStatus: string;
+// }
 
 const CompanySchema = new Schema(
   {
-    name: {
-      type: String,
-      required: true,
-      index: true,
-    },
     email: {
       type: String,
       required: true,
+      unique: true
+    },
+    name: {
+      type: String,
     },
     phone: {
       type: String,
@@ -22,6 +35,9 @@ const CompanySchema = new Schema(
       type: String,
     },
     address: {
+      type: String
+    },
+    description: {
       type: String
     },
     size: {
@@ -45,6 +61,6 @@ const CompanySchema = new Schema(
   { timestamps: true }
 );
 
-const Company = model("Company", CompanySchema)
+const Company = models.Company || model("Company", CompanySchema)
 
 export default Company;

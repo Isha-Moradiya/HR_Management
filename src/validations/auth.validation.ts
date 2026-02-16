@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ROLES } from "../constants/enums";
+import { ROLES } from "../app/api/lib/constants/enums";
 
 export const signupSchema = z.object({
     firstName: z.string().min(2),
@@ -53,6 +53,7 @@ export const inviteUserSchema = z.object({
         .email("Please enter a valid email address"),
     role: z.enum(Object.values(ROLES) as [string, ...string[]]),
     departmentId: z.string().optional(),
+    companyId: z.string().optional(),
 });
 
 export const acceptInviteSchema = z.object({

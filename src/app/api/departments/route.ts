@@ -1,43 +1,61 @@
-import { NextRequest, NextResponse } from "next/server";
-import { authMiddleware } from "../middleware/authMiddleware";
-import * as fs from "fs";
+import { NextRequest } from "next/server";
+import { connectDB } from "@/app/api/config/database";
+import { response } from "@/app/api/lib/response/responseHandler";
+import { authMiddleware } from "@/app/api/middleware/authMiddleware";
 import {
   createDepartment,
   getAllDepartments,
-} from "../services/department.service";
+} from "@/app/api/services/department.service";
+
+export const config = { api: { bodyParser: false } };
 
 // Get All Departments
 export async function GET(req: NextRequest) {
   try {
-    authMiddleware(req, ["admin", "employee"]);
-    const departments = await getAllDepartments();
-    return NextResponse.json(departments);
+    await connectDB();
+
+    const { user } = authMiddleware(req, ["admin", "employee"]);
+
+    const { searchParams } = new URL(req.url);
+    const page = Number(searchParams.get("page") || 1);
+    const limit = Number(searchParams.get("limit") || 10);
+
+    const result = await getAllDepartments({
+      companyId: user.companyId,
+      page,
+      limit,
+    });
+
+    return response.success(result, "Departments fetched");
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 401 });
+    return response.internalServerError(error.message);
   }
 }
 
 // Create Department
 export async function POST(req: NextRequest) {
-  const formData = await req.formData();
+  try {
+    await connectDB();
 
-  const department_name = formData.get("department_name")?.toString() || "";
-  const status =
-    (formData.get("status")?.toString() as "active" | "inactive") || "active";
+    const { user } = authMiddleware(req, ["admin"]);
 
-  const file = formData.get("logo") as File;
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  const filename = `${Date.now()}-${file.name}`;
-  const filePath = `public/uploads/${filename}`;
+    const formData = await req.formData();
+    const payload: any = Object.fromEntries(formData.entries());
 
-  fs.writeFileSync(filePath, buffer);
+    const logo = formData.get("logo") as File | null;
+    if (logo && typeof logo !== "string") {
+      payload.logo = logo.name;
+    }
 
-  const department = await createDepartment({
-    department_name,
-    status,
-    logo: `/uploads/${filename}`,
-  });
+    const department = await createDepartment({
+      companyId: user.companyId,
+      department_name: payload.department_name,
+      status: payload.status,
+      logo: payload.logo,
+    });
 
-  return NextResponse.json(department);
+    return response.success(department, "Department created successfully");
+  } catch (error: any) {
+    return response.internalServerError(error.message);
+  }
 }
